@@ -77,6 +77,21 @@ STATUS_FORBIDDEN = "HTTP/1.0 403 Forbidden\n\n"
 STATUS_NOT_FOUND = "HTTP/1.0 404 Not Found\n\n"
 STATUS_NOT_IMPLEMENTED = "HTTP/1.0 401 Not Implemented\n\n"
 
+def file_check():
+    # check DOCROOT (pages folder) for a file. 
+    # if no file exists in pages, return 404
+    # check contents of file...
+    #  if file contains illegal chars (.. or ~), return 403
+    #  otherwise...
+    #    return 200
+    # 
+
+    # If... a file exists in DOCROOT (pages/ in this case) (i.e. trivia.html, any name, any extention or format) exists,
+    #  transmit 200 OK header followed by that file. 
+    # If... the file doesn't exist, transmit 404 Not Found error code in the header along with a message in the body explaining further.
+    # If... a request includes illegal characters (.. or ~), the response should be a 403 Forbidden error, 
+    #  again with a message in the body explaining it.
+    return 
 
 def respond(sock):
     """
@@ -90,9 +105,27 @@ def respond(sock):
     log.info("Request was {}\n***\n".format(request))
 
     parts = request.split()
+
+
     if len(parts) > 1 and parts[0] == "GET":
-        transmit(STATUS_OK, sock)
-        transmit(CAT, sock)
+        # here: call file_check()
+        file_status = file_check()
+        if file_check == 200: 
+            transmit(STATUS_OK, sock)
+            transmit(CAT, sock) # transmit the page from DOCROOT instead of CAT
+        if file_check == 404: # (no file) 
+            transmit(STATUS_NOT_FOUND, sock)
+        # ...
+        if file_check == 403: # (illegal chars)
+            transmit(STATUS_FORBIDDEN, sock)
+        # ...
+        # REMOVE: this is already done later. but check before deleting. 
+        #if file_check == 401: # ()
+        #    transmit(STATUS_NOT_IMPLEMENTED, sock)
+        
+        else: # something is wrong, have this here so I will be able to tell
+            transmit(CAT, sock) 
+
     else:
         log.info("Unhandled request: {}".format(request))
         transmit(STATUS_NOT_IMPLEMENTED, sock)
