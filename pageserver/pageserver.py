@@ -89,10 +89,6 @@ def file_check():
 
     code = ""
     content = []
-
-    if len(folder) == 0: # no file exists in pages
-        code += " 404"
-        content = []
     
     file_list = os.listdir(folder)
     for file in file_list: 
@@ -102,10 +98,13 @@ def file_check():
             if ".." in contents or "~" in contents:
                 code += " 403"
             else:
-                code += " 202"
+                code += " 200"
                 content.append(contents)
 
-        
+    if len(code) is 0: # no file exists in pages
+        code += "404"
+
+    print("code is ", code)
         
     return code, content
 
@@ -137,10 +136,10 @@ def respond(sock):
         if "404" in file_status: # (no file) 
             transmit(STATUS_NOT_FOUND, sock)
 
-        if "403" in file_status: # (illegal chars)
+        elif "403" in file_status: # (illegal chars)
             transmit(STATUS_FORBIDDEN, sock)
 
-        else: # only 202s
+        else: # only 200s
             #transmit(STATUS_OK+display, sock)
             transmit(STATUS_OK, sock)
             transmit(display, sock)
