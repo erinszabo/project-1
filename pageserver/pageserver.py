@@ -87,20 +87,27 @@ def file_check():
     
     folder = get_options().DOCROOT
 
-    code = 0 
+    code = ""
+    content = []
 
     if len(folder) == 0: # no file exists in pages
-        code = 404
+        code += " 404"
+        content = []
     
     file_list = os.listdir(folder)
-    for file in file_list:
-        # check if file contains illegal chars
-        if ".." in file or "~" in file:
-            code = 403
-        else:
-            code = 202
+    for file in file_list: 
+        with open(folder+file, 'r') as f:
+            contents = f.read()
+            # check if file contains illegal chars
+            if ".." in contents or "~" in contents:
+                code += " 403"
+            else:
+                code += " 202"
+                content.append(contents)
+
         
-    return code
+        
+    return code, content
 
 
 
@@ -109,7 +116,7 @@ def respond(sock):
     This server responds only to GET requests (not PUT, POST, or UPDATE).
     Any valid GET request is answered with an ascii graphic of a cat.
     """
-    sent = 0
+    # sent = 0 # no sure why this is here
     request = sock.recv(1024)  # We accept only short requests
     request = str(request, encoding='utf-8', errors='strict')
     log.info("--- Received request ----")
@@ -119,21 +126,25 @@ def respond(sock):
 
 
     if len(parts) > 1 and parts[0] == "GET":
-        # here: call file_check()
-        file_status = file_check()
+        file_status, content = file_check()
+        display = ""
+        for c in content: # if I do just this then the text is red but no greenish background  
+            # and the css code shows on the page
+            display = c + display 
+        #display = content[1] # if I only do the html then no style is pulled
         print("file status is ", file_status)
-        if file_status == 202: 
-            transmit(STATUS_OK, sock)
-            transmit(CAT, sock) # transmit the page from DOCROOT instead of CAT
-        if file_status == 404: # (no file) 
+       
+        if "404" in file_status: # (no file) 
             transmit(STATUS_NOT_FOUND, sock)
-        # ...
-        if file_status == 403: # (illegal chars)
+
+        if "403" in file_status: # (illegal chars)
             transmit(STATUS_FORBIDDEN, sock)
 
-        
-        #else: # something is wrong, have this here so I will be able to tell
-        #    transmit(CAT, sock) 
+        else: # only 202s
+            #transmit(STATUS_OK+display, sock)
+            transmit(STATUS_OK, sock)
+            transmit(display, sock)
+
 
     else:
         log.info("Unhandled request: {}".format(request))
