@@ -22,6 +22,7 @@ log = logging.getLogger(__name__)
 
 import socket    # Basic TCP/IP communication on the internet
 import _thread   # Response computation runs concurrently with main program
+import os       
 
 
 def listen(portnum):
@@ -82,16 +83,26 @@ def file_check():
     # if no file exists in pages, return 404
     # check contents of file...
     #  if file contains illegal chars (.. or ~), return 403
-    #  otherwise...
-    #    return 200
-    # 
+    #  otherwise return 200
+    
+    folder = get_options().DOCROOT
 
-    # If... a file exists in DOCROOT (pages/ in this case) (i.e. trivia.html, any name, any extention or format) exists,
-    #  transmit 200 OK header followed by that file. 
-    # If... the file doesn't exist, transmit 404 Not Found error code in the header along with a message in the body explaining further.
-    # If... a request includes illegal characters (.. or ~), the response should be a 403 Forbidden error, 
-    #  again with a message in the body explaining it.
-    return 
+    code = 0 
+
+    if len(folder) == 0: # no file exists in pages
+        code = 404
+    
+    file_list = os.listdir(folder)
+    for file in file_list:
+        # check if file contains illegal chars
+        if ".." in file or "~" in file:
+            code = 403
+        else:
+            code = 202
+        
+    return code
+
+
 
 def respond(sock):
     """
@@ -110,21 +121,19 @@ def respond(sock):
     if len(parts) > 1 and parts[0] == "GET":
         # here: call file_check()
         file_status = file_check()
-        if file_check == 200: 
+        print("file status is ", file_status)
+        if file_status == 202: 
             transmit(STATUS_OK, sock)
             transmit(CAT, sock) # transmit the page from DOCROOT instead of CAT
-        if file_check == 404: # (no file) 
+        if file_status == 404: # (no file) 
             transmit(STATUS_NOT_FOUND, sock)
         # ...
-        if file_check == 403: # (illegal chars)
+        if file_status == 403: # (illegal chars)
             transmit(STATUS_FORBIDDEN, sock)
-        # ...
-        # REMOVE: this is already done later. but check before deleting. 
-        #if file_check == 401: # ()
-        #    transmit(STATUS_NOT_IMPLEMENTED, sock)
+
         
-        else: # something is wrong, have this here so I will be able to tell
-            transmit(CAT, sock) 
+        #else: # something is wrong, have this here so I will be able to tell
+        #    transmit(CAT, sock) 
 
     else:
         log.info("Unhandled request: {}".format(request))
@@ -181,3 +190,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+##### Questions for lab
+# 1) are '..' and '~' the only illegal chars we are checking for?
