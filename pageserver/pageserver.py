@@ -22,7 +22,6 @@ log = logging.getLogger(__name__)
 
 import socket    # Basic TCP/IP communication on the internet
 import _thread   # Response computation runs concurrently with main program
-import os       
 
 
 def listen(portnum):
@@ -78,73 +77,59 @@ STATUS_FORBIDDEN = "HTTP/1.0 403 Forbidden\n\n"
 STATUS_NOT_FOUND = "HTTP/1.0 404 Not Found\n\n"
 STATUS_NOT_IMPLEMENTED = "HTTP/1.0 401 Not Implemented\n\n"
 
-def file_check():
-    # check DOCROOT (pages folder) for a file. 
-    # if no file exists in pages, return 404
-    # check contents of file...
-    #  if file contains illegal chars (.. or ~), return 403
-    #  otherwise return 200
-    
-    folder = get_options().DOCROOT
-
-    code = ""
-    content = []
-    
-    file_list = os.listdir(folder)
-    for file in file_list: 
-        with open(folder+file, 'r') as f:
-            contents = f.read()
-            # check if file contains illegal chars
-            if ".." in contents or "~" in contents:
-                code += " 403"
-            else:
-                code += " 200"
-                content.append(contents)
-
-    if len(code) is 0: # no file exists in pages
-        code += "404"
-
-    print("code is ", code)
-        
-    return code, content
-
-
 
 def respond(sock):
     """
     This server responds only to GET requests (not PUT, POST, or UPDATE).
     Any valid GET request is answered with an ascii graphic of a cat.
     """
-    # sent = 0 # no sure why this is here
+    sent = 0
     request = sock.recv(1024)  # We accept only short requests
     request = str(request, encoding='utf-8', errors='strict')
     log.info("--- Received request ----")
     log.info("Request was {}\n***\n".format(request))
 
     parts = request.split()
-
-
     if len(parts) > 1 and parts[0] == "GET":
-        file_status, content = file_check()
-        display = ""
-        for c in content: # if I do just this then the text is red but no greenish background  
-            # and the css code shows on the page
-            display = c + display 
-        #display = content[1] # if I only do the html then no style is pulled
-        print("file status is ", file_status)
-       
-        if "404" in file_status: # (no file) 
-            transmit(STATUS_NOT_FOUND, sock)
+        # with open as html (google this) 
 
-        elif "403" in file_status: # (illegal chars)
-            transmit(STATUS_FORBIDDEN, sock)
+        file = parts[1]
+        file_path = get_options().DOCROOT + file[1:]
+        print("----------------"+ file_path)
+        if file_path == get_options().DOCROOT:
+            # on the landing page
+            # not sure what this behavior should be
+            print("-----on home -----")
+        
+        # check here if request (file_path) contains illegal chars
 
-        else: # only 200s
-            #transmit(STATUS_OK+display, sock)
+        # use a try excepe here:
+        # try: to open this file with the file_path
+        # except: this file is not in pages, return 404
+
+        # first without try...
+        with open(file_path, 'r', encoding='utf-8') as file:
+            contents = file.read()
             transmit(STATUS_OK, sock)
-            transmit(display, sock)
+            transmit(contents, sock)
+        #transmit(STATUS_OK, sock)
+        #transmit(contents, sock)
 
+        #try:
+        #    with open(path, 'r', encoding='utf-8') as file:
+        #        contents = file.read()
+        #    transmit(STATUS_OK, sock)
+        #    transmit(contents, sock)
+        #except:
+        #    transmit(STATUS_NOT_FOUND, sock)
 
+        # first assume all is ok (200) and get that to work 
+        #path = get_options().DOCROOT+'trivia.html' # fix hardcodding later
+        #with open(path, 'r', encoding='utf-8') as file:
+        #    contents = file.read()
+        
+        #transmit(STATUS_OK, sock)
+        #transmit(CAT, sock)
     else:
         log.info("Unhandled request: {}".format(request))
         transmit(STATUS_NOT_IMPLEMENTED, sock)
@@ -200,8 +185,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-##### Questions for lab
-# 1) are '..' and '~' the only illegal chars we are checking for?
