@@ -93,10 +93,6 @@ def respond(sock):
         file = parts[1]
         root = get_options().DOCROOT
         file_path = root + file[1:]
-        print("__file_path_________" + file_path)
-        print("__file____________" + file + "__")
-
-        print("__ len ___" + str(len(file[1:])))
 
         # check if request (file_path) contains illegal chars
         if (".." in file_path) or ("~" in file_path):
