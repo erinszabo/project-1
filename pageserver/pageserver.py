@@ -6,11 +6,9 @@
   error handling and many other things to keep the illustration as simple
   as possible.
 
-  FIXME:
-  Currently this program always serves an ascii graphic of a cat.
-  Change it to serve files if they end with .html or .css, and are
-  located in ./pages  (where '.' is the directory from which this
-  program is run).
+  Erin Szabo
+  CS 322
+  2023
 """
 
 import config    # Configure from .ini files and command line
@@ -98,19 +96,19 @@ def respond(sock):
         print("__file_path_________" + file_path)
         print("__file____________" + file + "__")
 
-        print("__ len ___" + str(len(file)))
-        if len(file) is 1:
-            # on the landing page
-            # not sure what this behavior should be
-            transmit(CAT, sock)
-            transmit(STATUS_OK, sock)
-        
-        # check here if request (file_path) contains illegal chars
-        elif (".." in file_path) or ("~" in file_path):
+        print("__ len ___" + str(len(file[1:])))
+
+        # check if request (file_path) contains illegal chars
+        if (".." in file_path) or ("~" in file_path):
             transmit(STATUS_FORBIDDEN, sock)
             transmit("\nThis request is forbidden: {}\n".format(parts[0:2]), sock)
             forbidden = True
-
+ 
+        # check if at base path
+        elif file[1:] is "":
+            transmit(STATUS_OK, sock)
+            transmit(CAT, sock)  
+        
         else:
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
