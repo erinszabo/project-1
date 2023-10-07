@@ -91,45 +91,37 @@ def respond(sock):
 
     parts = request.split()
     if len(parts) > 1 and parts[0] == "GET":
-        # with open as html (google this) 
 
         file = parts[1]
-        file_path = get_options().DOCROOT + file[1:]
-        print("----------------"+ file_path)
-        if file_path == get_options().DOCROOT:
+        root = get_options().DOCROOT
+        file_path = root + file[1:]
+        print("__file_path_________" + file_path)
+        print("__file____________" + file + "__")
+
+        print("__ len ___" + str(len(file)))
+        if len(file) is 1:
             # on the landing page
             # not sure what this behavior should be
-            print("-----on home -----")
+            transmit(CAT, sock)
+            transmit(STATUS_OK, sock)
         
         # check here if request (file_path) contains illegal chars
+        elif (".." in file_path) or ("~" in file_path):
+            transmit(STATUS_FORBIDDEN, sock)
+            transmit("\nThis request is forbidden: {}\n".format(parts[0:2]), sock)
+            forbidden = True
 
-        # use a try excepe here:
-        # try: to open this file with the file_path
-        # except: this file is not in pages, return 404
+        else:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    contents = file.read()
+                    transmit(STATUS_OK, sock)
+                    transmit(contents, sock)
+            except:
+                transmit(STATUS_NOT_FOUND, sock)
+                transmit("\nThe requested file was not found: {}\n".format(parts[0:2]), sock)
 
-        # first without try...
-        with open(file_path, 'r', encoding='utf-8') as file:
-            contents = file.read()
-            transmit(STATUS_OK, sock)
-            transmit(contents, sock)
-        #transmit(STATUS_OK, sock)
-        #transmit(contents, sock)
 
-        #try:
-        #    with open(path, 'r', encoding='utf-8') as file:
-        #        contents = file.read()
-        #    transmit(STATUS_OK, sock)
-        #    transmit(contents, sock)
-        #except:
-        #    transmit(STATUS_NOT_FOUND, sock)
-
-        # first assume all is ok (200) and get that to work 
-        #path = get_options().DOCROOT+'trivia.html' # fix hardcodding later
-        #with open(path, 'r', encoding='utf-8') as file:
-        #    contents = file.read()
-        
-        #transmit(STATUS_OK, sock)
-        #transmit(CAT, sock)
     else:
         log.info("Unhandled request: {}".format(request))
         transmit(STATUS_NOT_IMPLEMENTED, sock)
