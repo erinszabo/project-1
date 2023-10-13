@@ -92,7 +92,7 @@ def respond(sock):
 
         file = parts[1]
         root = get_options().DOCROOT
-        file_path = root + file[1:]
+        file_path = root + file #[1:]
 
         # check if request (file_path) contains illegal chars
         if (".." in file_path) or ("~" in file_path):
